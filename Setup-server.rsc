@@ -1,5 +1,5 @@
-:global DNSaddress
-:global IPaddress
+:local DNSaddress
+:local IPaddress
 :put "You have Domain name?\r\nIf have you have press y.\r\n Else press any key."
 :local read do={:return}
 :set $answer [$read]
@@ -11,7 +11,7 @@ do {
 
         :put "Enter your Domain name."
         :local read do={:return}
-        :set DNSaddress [$read]
+        :set $DNSaddress [$read]
         :put $DNSaddress
 
     } else {
@@ -20,11 +20,11 @@ do {
 
             /ip cloud set ddns-enabled=yes
             :delay 10s
-            :set DNSaddress [/ip cloud get value-name=dns-name]
+            :set $DNSaddress [/ip cloud get value-name=dns-name]
 
         } else {
 
-            :set DNSaddress [/ip cloud get value-name=dns-name]
+            :set $DNSaddress [/ip cloud get value-name=dns-name]
 
         }
 
@@ -39,7 +39,7 @@ do {
 
         /tool fetch url="https://v4.ident.me/" dst-path=myIPv4.txt
         :delay 1s
-        :set IPaddress [/file get myIPv4.txt contents]
+        :set $IPaddress [/file get myIPv4.txt contents]
         :put "$IPaddress It's your address?"
         /file remove myIPv4.txt
 
@@ -107,11 +107,25 @@ do {
         :set $split [$read]
         :if ($split != 0) do {
 
-        :put "Generate IpSec configurations."
-        /ip ipsec mode-config add address-pool="pool $DNSaddress" address-prefix-length=32 name="modeconf $DNSaddress" split-include=$split static-dns=$answer system-dns=no
+            :put "Generate IpSec configurations."
+            /ip ipsec mode-config add address-pool="pool $DNSaddress" address-prefix-length=32 name="modeconf $DNSaddress" split-include=$split static-dns=$answer system-dns=no            
+
+        } else {
+
+            :put "Generate IpSec configurations."
+            /ip ipsec mode-config add address-pool="pool $DNSaddress" address-prefix-length=32 name="modeconf $DNSaddress" split-include=0.0.0.0/0 static-dns=$answer system-dns=no
 
         }
 
+        /ip ipsec profile add dh-group=modp2048,modp1536,modp1024 enc-algorithm=aes-256,aes-192,aes-128 hash-algorithm=sha256 name="profile $DNSaddress" nat-traversal=yes  proposal-check=obey 
+        /ip ipsec peer add exchange-mode=ike2 address=0.0.0.0/0 local-address="$IPaddress" name="peer $IPaddress" passive=yes send-initial-contact=yes profile="profile $DNSaddress"
+        /ip ipsec proposal add auth-algorithms=sha512,sha256,sha1 enc-algorithms=aes-256-cbc,aes-256-ctr,aes-256-gcm,aes-192-ctr,aes-192-gcm,aes-128-cbc,aes-128-ctr,aes-128-gcm lifetime=8h name="proposal $DNSaddress" pfs-group=none
+        /ip ipsec policy group add name="group $DNSaddress"
+        :local dst [ /ip address get value-name=network [ find where interface=LoopBack ] ]
+        /ip ipsec policy add dst-address=($dst . "/" . $mask) group="group $DNSaddress" proposal="proposal $DNSaddress" src-address=0.0.0.0/0 template=yes
+
     }
+
+    :put "Do you want "
 
 }
