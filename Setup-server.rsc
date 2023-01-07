@@ -126,6 +126,182 @@ do {
 
     }
 
-    :put "Do you want "
+    :put "Do you want generate firewall rules? Enter yes or press any key"
+    :local read [:return]
+    :set $answer [$read]
+    
+    :if ($answer = "yes") do {
+
+        :put "Generate firewall rules."
+        :if ([/ip firewall mangle find ipsec-policy="out,ipsec"] = "") do {
+            
+            /ip firewall mangle add action=mark-connection chain=output comment="mark ipsec connections" ipsec-policy=out,ipsec new-connection-mark=ipsec passthrough=yes
+        
+        }
+        
+        :if ([/ip firewall mangle find ipsec-policy="in,ipsec"] = "") do {
+        
+            /ip firewall mangle add action=mark-connection chain=input comment="mark ipsec connections" ipsec-policy=in,ipsec new-connection-mark=ipsec passthrough=yes
+        
+        }
+        
+        :if ([/ip firewall mangle find new-mss="1360"] = "") do {
+        
+            /ip firewall mangle add action=change-mss chain=forward ipsec-policy=in,ipsec new-mss=1360 passthrough=yes protocol=tcp src-address=10.0.88.0/24 tcp-flags=syn tcp-mss=!0-1360
+            /ip firewall mangle add action=change-mss chain=forward dst-address=10.0.88.0/24 ipsec-policy=out,ipsec new-mss=1360 passthrough=yes protocol=tcp tcp-flags=syn tcp-mss=!0-1360
+        
+        }
+        
+        :if ([/ip firewall nat find src-address="10.0.88.0/24"] = "") do {
+        
+            /ip firewall nat add action=src-nat chain=srcnat ipsec-policy=out,none src-address=10.0.88.0/24 to-addresses=$IPaddress place-before=0
+        
+        }
+        
+        :if ([/ip firewall filter find port="4500"] = "") do {
+        
+            :if ([/ip firewall filter find port="500"] = "") do {
+        
+                :if ([/ip firewall filter find port="500,4500"] = "") do {
+        
+                    /ip firewall filter add action=accept chain=input dst-address=$IPaddress port=500,4500 protocol=udp place-before=0
+                    :put "Firewall filter rules for ports 500,4500 created."
+        
+                } else {
+        
+                    :put "Firewall filter rules for ports 500, 4500 exist. Skip"
+        
+                }
+        
+            } else {
+        
+                /ip firewall filter add action=accept chain=input dst-address=$IPaddress port=4500 protocol=udp place-before=0
+                :put "Firewall filter rules for port 500 exist, but for port 4500 not. Created"
+        
+            }
+        
+        } else {
+        
+            :if ([/ip firewall filter find port="500"] = "") do {
+        
+                /ip firewall filter add action=accept chain=input dst-address=$IPaddress port=500 protocol=udp place-before=0
+                :put "Firewall filter rules for port 4500 exist, but for port 500 not. Created"
+        
+            } else {
+        
+                :put "Firewall filter rules for ports 500, 4500 exist. Skip"
+        
+            }
+        
+        }
+        
+        :if ([/ip firewall filter find where protocol="ipsec-esp"] = "") do {
+        
+            /ip firewall filter add action=accept chain=input dst-address=$IPaddress protocol=ipsec-esp place-before=0
+            :put "Firewall filter rule for protocol IPSec-ESP created."
+        
+        } else {
+        
+            :put "Firewall filter rule for protocol IPSec-ESP exist. Skip."
+        
+        }
+        
+        :if ([/ip firewall filter find ipsec-policy="in,ipsec" src-address="10.0.88.0/24" chain=input] = "") do {
+        
+            /ip firewall filter add action=accept chain=input ipsec-policy=in,ipsec src-address=10.0.88.0/24 place-before=0
+            :put "Firewall filter rule for allow access from IKE2 clients to router created."
+        
+        } else {
+        
+            :put "Firewall filter rule for allow access from IKE2 clients to router exist. Skip."
+        
+        }
+        
+        :if ([/ip firewall filter find ipsec-policy="in,ipsec" chain=forward] = "") do {
+            /ip firewall filter add action=accept chain=forward ipsec-policy=in,ipsec place-before=0
+            :put "Firewall filter rule forward from IKE2 clients created."
+        
+        } else {
+        
+            :put "Firewall filter rule forward from IKE2 clients exist. Skip"
+        
+        }
+        
+        :if ([/ip firewall filter find ipsec-policy="in,ipsec" src-address="10.0.88.0/24" dst-address="0.0.0.0/0" chain=forward] = "") do {
+        
+            /ip firewall filter add action=accept chain=forward dst-address=0.0.0.0/0 ipsec-policy=in,ipsec src-address=10.0.88.0/24 place-before=0
+            :put "Firewall filter rule forward from IKE2 clients created to any."
+        
+        } else {
+        
+            :put "Firewall filter rule forward from IKE2 clients exist to any. Skip"
+        
+        }
+        
+        :if ([/ip firewall filter find ipsec-policy="out,ipsec" chain=forward] = "") do {
+        
+            /ip firewall filter add action=accept chain=forward ipsec-policy=out,ipsec place-before=0
+            :put "Firewall filter rule forward out IKE2 clients created."
+        
+        } else {
+        
+            :put "Firewall filter rule forward out IKE2 clients exist. Skip"
+        
+        }
+        
+        :if ([/ip firewall filter find action=fasttrack-connection chain=forward connection-state="established,related"] = "") do {
+        
+            /ip firewall filter add action=fasttrack-connection chain=forward connection-mark=!ipsec connection-state=established,related place-before=0
+            :put "Firewall filter rule for fasttrack created."
+        
+            :if ([/ip firewall filter find chain=forward connection-state="established,related,untracked"] = "") do {
+        
+                /ip firewall filter add action=accept chain=forward connection-state=established,related,untracked place-before=0
+                :put "Firewall filter rule for established, related, untracked connection created. "
+        
+            } else {
+        
+                :put "Firewall filter rule for established, related, untracked connection exist. Skip."
+        
+            }
+        
+        } else {
+        
+            :if ([/ip firewall filter find action=fasttrack-connection chain=forward connection-state="established,related" connection-mark="!ipsec"] = "") do {
+        
+                /ip firewall filter set [find action=fasttrack-connection] connection-mark=!ipsec
+                :put "Modificate fasttrack filter rule for correct work with ipsec."
+        
+                :if ([/ip firewall filter find chain=forward connection-state="established,related,untracked"] = "") do {
+        
+                    /ip firewall filter add action=accept chain=forward connection-state=established,related,untracked place-before=0
+                    :put "Firewall filter rule for established, related, untracked connection created. "
+        
+                } else {
+        
+                :put "Firewall filter rule for established, related, untracked connection exist. Skip."
+        
+                }
+        
+            } else {
+        
+                :put "Correct fasttrack filter rule for correct work with ipsec exist. Skip."
+        
+                :if ([/ip firewall filter find chain=forward connection-state="established,related,untracked"] = "") do {
+        
+                    /ip firewall filter add action=accept chain=forward connection-state=established,related,untracked place-before=0
+                    :put "Firewall filter rule for established, related, untracked connection created. "
+        
+                } else {
+        
+                :put "Firewall filter rule for established, related, untracked connection exist. Skip."
+        
+                }
+        
+            }
+
+        }
+
+    }
 
 }
