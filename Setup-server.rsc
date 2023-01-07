@@ -1,5 +1,5 @@
-:global DNSaddress
-:global IPaddress
+:local DNSaddress
+:local IPaddress
 :put "You have Domain name?\r\nIf have you have press y.\r\n Else press any key."
 :local read do={:return}
 :set $answer [$read]
@@ -105,6 +105,7 @@ do {
         :local split
         :local read do=[:return]
         :set $split [$read]
+
         :if ($split != 0) do {
 
             :put "Generate IpSec configurations."
@@ -126,13 +127,14 @@ do {
 
     }
 
-    :put "Do you want generate firewall rules? Enter yes or press any key"
+    :put "Do you want generate firewall rules? Enter y or press any key"
     :local read [:return]
     :set $answer [$read]
     
-    :if ($answer = "yes") do {
+    :if ($answer = "y") do {
 
         :put "Generate firewall rules."
+        
         :if ([/ip firewall mangle find ipsec-policy="out,ipsec"] = "") do {
             
             /ip firewall mangle add action=mark-connection chain=output comment="mark ipsec connections" ipsec-policy=out,ipsec new-connection-mark=ipsec passthrough=yes
@@ -147,14 +149,14 @@ do {
         
         :if ([/ip firewall mangle find new-mss="1360"] = "") do {
         
-            /ip firewall mangle add action=change-mss chain=forward ipsec-policy=in,ipsec new-mss=1360 passthrough=yes protocol=tcp src-address=10.0.88.0/24 tcp-flags=syn tcp-mss=!0-1360
-            /ip firewall mangle add action=change-mss chain=forward dst-address=10.0.88.0/24 ipsec-policy=out,ipsec new-mss=1360 passthrough=yes protocol=tcp tcp-flags=syn tcp-mss=!0-1360
+            /ip firewall mangle add action=change-mss chain=forward ipsec-policy=in,ipsec new-mss=1360 passthrough=yes protocol=tcp src-address=($dst . "/" . $mask) tcp-flags=syn tcp-mss=!0-1360
+            /ip firewall mangle add action=change-mss chain=forward dst-address=($dst . "/" . $mask) ipsec-policy=out,ipsec new-mss=1360 passthrough=yes protocol=tcp tcp-flags=syn tcp-mss=!0-1360
         
         }
         
-        :if ([/ip firewall nat find src-address="10.0.88.0/24"] = "") do {
+        :if ([/ip firewall nat find src-address=($dst . "/" . $mask)] = "") do {
         
-            /ip firewall nat add action=src-nat chain=srcnat ipsec-policy=out,none src-address=10.0.88.0/24 to-addresses=$IPaddress place-before=0
+            /ip firewall nat add action=src-nat chain=srcnat ipsec-policy=out,none src-address=($dst . "/" . $mask) to-addresses=$IPaddress place-before=0
         
         }
         
@@ -206,7 +208,7 @@ do {
         
         }
         
-        :if ([/ip firewall filter find ipsec-policy="in,ipsec" src-address="10.0.88.0/24" chain=input] = "") do {
+        :if ([/ip firewall filter find ipsec-policy="in,ipsec" src-address=($dst . "/" . $mask) chain=input] = "") do {
         
             /ip firewall filter add action=accept chain=input ipsec-policy=in,ipsec src-address=10.0.88.0/24 place-before=0
             :put "Firewall filter rule for allow access from IKE2 clients to router created."
@@ -227,9 +229,9 @@ do {
         
         }
         
-        :if ([/ip firewall filter find ipsec-policy="in,ipsec" src-address="10.0.88.0/24" dst-address="0.0.0.0/0" chain=forward] = "") do {
+        :if ([/ip firewall filter find ipsec-policy="in,ipsec" src-address=($dst . "/" . $mask) dst-address="0.0.0.0/0" chain=forward] = "") do {
         
-            /ip firewall filter add action=accept chain=forward dst-address=0.0.0.0/0 ipsec-policy=in,ipsec src-address=10.0.88.0/24 place-before=0
+            /ip firewall filter add action=accept chain=forward dst-address=0.0.0.0/0 ipsec-policy=in,ipsec src-address=($dst . "/" . $mask) place-before=0
             :put "Firewall filter rule forward from IKE2 clients created to any."
         
         } else {

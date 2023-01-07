@@ -12,15 +12,19 @@
 
 do {
     :if ($WhatYouWant = 1) do {
+
         system script run Setup-server
+    
     }
     
     :if ($WhatYouWant = 2) do {
-        
+            
     }
     
     :if ($WhatYouWant = 3) do {
         
+        system script run Setup-client
+
     }
     
     :if ($WhatYouWant = 4) do {
