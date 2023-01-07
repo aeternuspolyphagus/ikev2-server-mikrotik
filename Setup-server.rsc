@@ -299,11 +299,7 @@ do {
                 :put "Firewall filter rule for established, related, untracked connection exist. Skip."
         
                 }
-        
             }
-
         }
-
     }
-
 }
