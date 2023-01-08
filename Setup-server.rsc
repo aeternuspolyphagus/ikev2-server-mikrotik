@@ -3,7 +3,7 @@
 :put "You have Domain name?\r\nIf have you have press y.\r\n Else press any key."
 :local read do={:return}
 :set $answer [$read]
-:put $answer
+#:put $answer
 
 do {
 
@@ -29,13 +29,14 @@ do {
         }
 
     }
-
+    
+    :local IP
     :put "Enter your real ip.\r\nFor auto-ident press 0."
     :local read do={:return}
-    :set $answer [$read]
-    :put $answer
+    :set $IP [$read]
+    #:put $answer
 
-    :if ($answer = 0) do {
+    :if ($IP = 0) do {
 
         /tool fetch url="https://v4.ident.me/" dst-path=myIPv4.txt
         :delay 1s
@@ -45,15 +46,15 @@ do {
 
     } else {
 
-        :set $IPaddress [$answer]
+        :set $IPaddress [$IP]
         :put "$IPaddress It's your address?"
 
     }
 
-    :put "Do you want create certificate bundle? Like CA, Server certificate and temp client certificate?\r\nPress y if you want or press any key."
-
     :put $DNSaddress
     :put $IPaddress
+
+    :put "Do you want create certificate bundle? Like CA, Server certificate and temp client certificate?\r\nPress y if you want or press any key."
 
     :local read do={:return}
     :set $answer [$read]
@@ -89,13 +90,14 @@ do {
         :put "Create LoopBack-bridge."
         /interface bridge add name="LoopBack"
         :put "Enter ip address for bridge."
+        :local IPBR
         :local read do={:return}
-        :set $answer [$read]
+        :set $IPBR [$read]
         :put "Enter mask for bridge like 24, 16, 30 and etc."
         :local read do={:return}
         :local mask
         :set $mask [$read]
-        /ip address add address=([$answer]. "/" . $mask) interface=LoopBack
+        /ip address add address=([$IPBR]. "/" . $mask) interface=LoopBack
         :put "Enter ip-pool for Ipsec-client. Like x.x.x.100-x.x.x.200."
         :local pool
         :local read do=[:return]
@@ -109,12 +111,12 @@ do {
         :if ($split != 0) do {
 
             :put "Generate IpSec configurations."
-            /ip ipsec mode-config add address-pool="pool $DNSaddress" address-prefix-length=32 name="modeconf $DNSaddress" split-include=$split static-dns=$answer system-dns=no            
+            /ip ipsec mode-config add address-pool="pool $DNSaddress" address-prefix-length=32 name="modeconf $DNSaddress" split-include=$split static-dns=$IPBR system-dns=no            
 
         } else {
 
             :put "Generate IpSec configurations."
-            /ip ipsec mode-config add address-pool="pool $DNSaddress" address-prefix-length=32 name="modeconf $DNSaddress" split-include=0.0.0.0/0 static-dns=$answer system-dns=no
+            /ip ipsec mode-config add address-pool="pool $DNSaddress" address-prefix-length=32 name="modeconf $DNSaddress" split-include=0.0.0.0/0 static-dns=$IPBR system-dns=no
 
         }
 
