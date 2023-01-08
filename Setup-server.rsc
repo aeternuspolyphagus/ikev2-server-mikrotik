@@ -6,7 +6,7 @@
 :set $answer [$read]
 #:put $answer
 
-do {
+:do {
 
     :if ($answer = "y") do {
 
