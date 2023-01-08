@@ -88,7 +88,7 @@ do {
     :if ($answer = "y") do {
 
         :put "Create LoopBack-bridge."
-        /interface bridge add name="LoopBack"
+        /interface bridge add name="LoopBack" comment=$DNSaddress
         :put "Enter ip address for bridge."
         :local IPBR
         :local read do={:return}
