@@ -1,5 +1,6 @@
 :local DNSaddress
 :local IPaddress
+:local answer
 :put "You have Domain name?\r\nIf have you have press y.\r\n Else press any key."
 :local read do={:return}
 :set $answer [$read]
