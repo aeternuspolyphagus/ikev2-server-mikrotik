@@ -1,10 +1,9 @@
 :local DNSaddress
 :local IPaddress
 :local answer
-:put "You have Domain name?\r\nIf have you have press y.\r\n Else press any key."
+:put "You have Domain name?\r\nIf have you have press y.\r\nElse press any key."
 :local read do={:return}
 :set $answer [$read]
-#:put $answer
 
 :do {
 
@@ -35,7 +34,6 @@
     :put "Enter your real ip.\r\nFor auto-ident press 0."
     :local read do={:return}
     :set $IP [$read]
-    #:put $answer
 
     :if ($IP = 0) do {
 
