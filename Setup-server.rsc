@@ -97,12 +97,12 @@ do {
         :local read do={:return}
         :local mask
         :set $mask [$read]
-        /ip address add address=([$IPBR]. "/" . $mask) interface=LoopBack
+        /ip address add address=([$IPBR]. "/" . $mask) interface=LoopBack comment=$DNSaddress
         :put "Enter ip-pool for Ipsec-client. Like x.x.x.100-x.x.x.200."
         :local pool
         :local read do=[:return]
         :set pool [$read]
-        /ip pool add name="pool $DNSaddress" ranges=$pool
+        /ip pool add name="pool $DNSaddress" ranges=$pool comment=$DNSaddress
         :put "You want route for specified network or any? Enter specified networks like x.x.x.x/x,y.y.y.y/y or press 0."
         :local split
         :local read do=[:return]
@@ -121,11 +121,11 @@ do {
         }
 
         /ip ipsec profile add dh-group=modp2048,modp1536,modp1024 enc-algorithm=aes-256,aes-192,aes-128 hash-algorithm=sha256 name="profile $DNSaddress" nat-traversal=yes  proposal-check=obey 
-        /ip ipsec peer add exchange-mode=ike2 address=0.0.0.0/0 local-address="$IPaddress" name="peer $IPaddress" passive=yes send-initial-contact=yes profile="profile $DNSaddress"
+        /ip ipsec peer add exchange-mode=ike2 address=0.0.0.0/0 local-address="$IPaddress" name="peer $IPaddress" passive=yes send-initial-contact=yes profile="profile $DNSaddress" comment=$DNSaddress
         /ip ipsec proposal add auth-algorithms=sha512,sha256,sha1 enc-algorithms=aes-256-cbc,aes-256-ctr,aes-256-gcm,aes-192-ctr,aes-192-gcm,aes-128-cbc,aes-128-ctr,aes-128-gcm lifetime=8h name="proposal $DNSaddress" pfs-group=none
         /ip ipsec policy group add name="group $DNSaddress"
         :local dst [ /ip address get value-name=network [ find where interface=LoopBack ] ]
-        /ip ipsec policy add dst-address=($dst . "/" . $mask) group="group $DNSaddress" proposal="proposal $DNSaddress" src-address=0.0.0.0/0 template=yes
+        /ip ipsec policy add dst-address=($dst . "/" . $mask) group="group $DNSaddress" proposal="proposal $DNSaddress" src-address=0.0.0.0/0 template=yes comment=$DNSaddress
 
     }
 

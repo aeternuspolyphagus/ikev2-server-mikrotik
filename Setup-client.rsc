@@ -32,6 +32,6 @@ add copy-from="~client-template@$DNSaddress" name="$newClient@$DNSaddress" commo
 
 /ip ipsec identity
 add auth-method=digital-signature certificate="$DNSaddress" remote-certificate="$newClient@$DNSaddress" generate-policy=port-strict \
-match-by=certificate mode-config="modeconf $DNSaddress" peer="peer $IPaddress" policy-template-group="group $DNSaddress" remote-id="user-fqdn:$newClient@$DNSaddress"
+match-by=certificate mode-config="modeconf $DNSaddress" peer="peer $IPaddress" policy-template-group="group $DNSaddress" remote-id="user-fqdn:$newClient@$DNSaddress" comment=$DNSaddress
 
 :log warn " ============== Script finished ============== "

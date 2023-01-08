@@ -18,7 +18,9 @@ do {
     }
     
     :if ($WhatYouWant = 2) do {
-            
+
+        system script run Remove-server
+
     }
     
     :if ($WhatYouWant = 3) do {
@@ -28,6 +30,8 @@ do {
     }
     
     :if ($WhatYouWant = 4) do {
+
+        system script run Remove-client
         
     }
 }
