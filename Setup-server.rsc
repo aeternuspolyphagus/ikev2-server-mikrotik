@@ -80,11 +80,6 @@
 
     }
 
-    :put "Do you want to create LoopBack-Bridge? Press y for yes or any key to no."
-    :local read do={:return}
-    :set $answer [$read]
-
-    :if ($answer = "y") do {
 
         :put "Create LoopBack-bridge."
         /interface bridge add name="LoopBack" comment=$DNSaddress
@@ -92,11 +87,7 @@
         :local IPBR
         :local read do={:return}
         :set $IPBR [$read]
-        :put "Enter mask for bridge like 24, 16, 30 and etc."
-        :local read do={:return}
-        :local mask
-        :set $mask [$read]
-        /ip address add address=([$IPBR]. "/" . $mask) interface=LoopBack comment=$DNSaddress
+        /ip address add address=([$IPBR]. "/24") interface=LoopBack comment=$DNSaddress
         :put "Enter ip-pool for Ipsec-client. Like x.x.x.100-x.x.x.200."
         :local pool
         :local read do=[:return]
@@ -124,9 +115,7 @@
         /ip ipsec proposal add auth-algorithms=sha512,sha256,sha1 enc-algorithms=aes-256-cbc,aes-256-ctr,aes-256-gcm,aes-192-ctr,aes-192-gcm,aes-128-cbc,aes-128-ctr,aes-128-gcm lifetime=8h name="$DNSaddress" pfs-group=none
         /ip ipsec policy group add name="$DNSaddress"
         :local dst [ /ip address get value-name=network [ find where interface=LoopBack ] ]
-        /ip ipsec policy add dst-address=($dst . "/" . $mask) group="$DNSaddress" proposal="$DNSaddress" src-address=0.0.0.0/0 template=yes comment=$DNSaddress
-
-    }
+        /ip ipsec policy add dst-address=($dst . "/24") group="$DNSaddress" proposal="$DNSaddress" src-address=0.0.0.0/0 template=yes comment=$DNSaddress
 
     :put "Do you want generate firewall rules? Enter y or press any key"
     :local read do=[:return]
@@ -150,14 +139,14 @@
         
         :if ([/ip firewall mangle find new-mss="1360"] = "") do {
         
-            /ip firewall mangle add action=change-mss chain=forward ipsec-policy=in,ipsec new-mss=1360 passthrough=yes protocol=tcp src-address=($dst . "/" . $mask) tcp-flags=syn tcp-mss=!0-1360
-            /ip firewall mangle add action=change-mss chain=forward dst-address=($dst . "/" . $mask) ipsec-policy=out,ipsec new-mss=1360 passthrough=yes protocol=tcp tcp-flags=syn tcp-mss=!0-1360
+            /ip firewall mangle add action=change-mss chain=forward ipsec-policy=in,ipsec new-mss=1360 passthrough=yes protocol=tcp src-address=($dst . "/24") tcp-flags=syn tcp-mss=!0-1360
+            /ip firewall mangle add action=change-mss chain=forward dst-address=($dst . "/24") ipsec-policy=out,ipsec new-mss=1360 passthrough=yes protocol=tcp tcp-flags=syn tcp-mss=!0-1360
         
         }
         
-        :if ([/ip firewall nat find src-address=($dst . "/" . $mask)] = "") do {
+        :if ([/ip firewall nat find src-address=($dst . "/24")] = "") do {
         
-            /ip firewall nat add action=src-nat chain=srcnat ipsec-policy=out,none src-address=($dst . "/" . $mask) to-addresses=$IPaddress place-before=0
+            /ip firewall nat add action=src-nat chain=srcnat ipsec-policy=out,none src-address=($dst . "/24") to-addresses=$IPaddress
         
         }
         
@@ -167,7 +156,7 @@
         
                 :if ([/ip firewall filter find port="500,4500"] = "") do {
         
-                    /ip firewall filter add action=accept chain=input dst-address=$IPaddress port=500,4500 protocol=udp place-before=0
+                    /ip firewall filter add action=accept chain=input dst-address=$IPaddress port=500,4500 protocol=udp 
                     :put "Firewall filter rules for ports 500,4500 created."
         
                 } else {
@@ -178,7 +167,7 @@
         
             } else {
         
-                /ip firewall filter add action=accept chain=input dst-address=$IPaddress port=4500 protocol=udp place-before=0
+                /ip firewall filter add action=accept chain=input dst-address=$IPaddress port=4500 protocol=udp 
                 :put "Firewall filter rules for port 500 exist, but for port 4500 not. Created"
         
             }
@@ -187,7 +176,7 @@
         
             :if ([/ip firewall filter find port="500"] = "") do {
         
-                /ip firewall filter add action=accept chain=input dst-address=$IPaddress port=500 protocol=udp place-before=0
+                /ip firewall filter add action=accept chain=input dst-address=$IPaddress port=500 protocol=udp 
                 :put "Firewall filter rules for port 4500 exist, but for port 500 not. Created"
         
             } else {
@@ -200,7 +189,7 @@
         
         :if ([/ip firewall filter find where protocol="ipsec-esp"] = "") do {
         
-            /ip firewall filter add action=accept chain=input dst-address=$IPaddress protocol=ipsec-esp place-before=0
+            /ip firewall filter add action=accept chain=input dst-address=$IPaddress protocol=ipsec-esp 
             :put "Firewall filter rule for protocol IPSec-ESP created."
         
         } else {
@@ -209,9 +198,9 @@
         
         }
         
-        :if ([/ip firewall filter find ipsec-policy="in,ipsec" src-address=($dst . "/" . $mask) chain=input] = "") do {
+        :if ([/ip firewall filter find ipsec-policy="in,ipsec" src-address=($dst . "/24") chain=input] = "") do {
         
-            /ip firewall filter add action=accept chain=input ipsec-policy=in,ipsec src-address=10.0.88.0/24 place-before=0
+            /ip firewall filter add action=accept chain=input ipsec-policy=in,ipsec src-address=10.0.88.0/24 
             :put "Firewall filter rule for allow access from IKE2 clients to router created."
         
         } else {
@@ -221,7 +210,7 @@
         }
         
         :if ([/ip firewall filter find ipsec-policy="in,ipsec" chain=forward] = "") do {
-            /ip firewall filter add action=accept chain=forward ipsec-policy=in,ipsec place-before=0
+            /ip firewall filter add action=accept chain=forward ipsec-policy=in,ipsec 
             :put "Firewall filter rule forward from IKE2 clients created."
         
         } else {
@@ -230,9 +219,9 @@
         
         }
         
-        :if ([/ip firewall filter find ipsec-policy="in,ipsec" src-address=($dst . "/" . $mask) dst-address="0.0.0.0/0" chain=forward] = "") do {
+        :if ([/ip firewall filter find ipsec-policy="in,ipsec" src-address=($dst . "/24") dst-address="0.0.0.0/0" chain=forward] = "") do {
         
-            /ip firewall filter add action=accept chain=forward dst-address=0.0.0.0/0 ipsec-policy=in,ipsec src-address=($dst . "/" . $mask) place-before=0
+            /ip firewall filter add action=accept chain=forward dst-address=0.0.0.0/0 ipsec-policy=in,ipsec src-address=($dst . "/24") 
             :put "Firewall filter rule forward from IKE2 clients created to any."
         
         } else {
@@ -243,7 +232,7 @@
         
         :if ([/ip firewall filter find ipsec-policy="out,ipsec" chain=forward] = "") do {
         
-            /ip firewall filter add action=accept chain=forward ipsec-policy=out,ipsec place-before=0
+            /ip firewall filter add action=accept chain=forward ipsec-policy=out,ipsec 
             :put "Firewall filter rule forward out IKE2 clients created."
         
         } else {
@@ -254,12 +243,12 @@
         
         :if ([/ip firewall filter find action=fasttrack-connection chain=forward connection-state="established,related"] = "") do {
         
-            /ip firewall filter add action=fasttrack-connection chain=forward connection-mark=!ipsec connection-state=established,related place-before=0
+            /ip firewall filter add action=fasttrack-connection chain=forward connection-mark=!ipsec connection-state=established,related 
             :put "Firewall filter rule for fasttrack created."
         
             :if ([/ip firewall filter find chain=forward connection-state="established,related,untracked"] = "") do {
         
-                /ip firewall filter add action=accept chain=forward connection-state=established,related,untracked place-before=0
+                /ip firewall filter add action=accept chain=forward connection-state=established,related,untracked 
                 :put "Firewall filter rule for established, related, untracked connection created. "
         
             } else {
@@ -277,7 +266,7 @@
         
                 :if ([/ip firewall filter find chain=forward connection-state="established,related,untracked"] = "") do {
         
-                    /ip firewall filter add action=accept chain=forward connection-state=established,related,untracked place-before=0
+                    /ip firewall filter add action=accept chain=forward connection-state=established,related,untracked 
                     :put "Firewall filter rule for established, related, untracked connection created. "
         
                 } else {
@@ -292,7 +281,7 @@
         
                 :if ([/ip firewall filter find chain=forward connection-state="established,related,untracked"] = "") do {
         
-                    /ip firewall filter add action=accept chain=forward connection-state=established,related,untracked place-before=0
+                    /ip firewall filter add action=accept chain=forward connection-state=established,related,untracked 
                     :put "Firewall filter rule for established, related, untracked connection created. "
         
                 } else {
