@@ -129,7 +129,7 @@
     }
 
     :put "Do you want generate firewall rules? Enter y or press any key"
-    :local read [:return]
+    :local read do=[:return]
     :set $answer [$read]
     
     :if ($answer = "y") do {

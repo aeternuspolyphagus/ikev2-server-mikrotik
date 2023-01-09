@@ -368,7 +368,7 @@ add dont-require-permissions=no name=Setup-server owner=admin policy=\
     \n\r\
     \n    :put \"Do you want generate firewall rules\? Enter y or press any ke\
     y\"\r\
-    \n    :local read [:return]\r\
+    \n    :local read=do[:return]\r\
     \n    :set \$answer [\$read]\r\
     \n    \r\
     \n    :if (\$answer = \"y\") do {\r\
