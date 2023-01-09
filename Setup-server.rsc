@@ -110,21 +110,21 @@
         :if ($split != 0) do {
 
             :put "Generate IpSec configurations."
-            /ip ipsec mode-config add address-pool="pool $DNSaddress" address-prefix-length=32 name="modeconf $DNSaddress" split-include=$split static-dns=$IPBR system-dns=no            
+            /ip ipsec mode-config add address-pool="pool $DNSaddress" address-prefix-length=32 name="$DNSaddress" split-include=$split static-dns=$IPBR system-dns=no            
 
         } else {
 
             :put "Generate IpSec configurations."
-            /ip ipsec mode-config add address-pool="pool $DNSaddress" address-prefix-length=32 name="modeconf $DNSaddress" split-include=0.0.0.0/0 static-dns=$IPBR system-dns=no
+            /ip ipsec mode-config add address-pool="pool $DNSaddress" address-prefix-length=32 name=" $DNSaddress" split-include=0.0.0.0/0 static-dns=$IPBR system-dns=no
 
         }
 
-        /ip ipsec profile add dh-group=modp2048,modp1536,modp1024 enc-algorithm=aes-256,aes-192,aes-128 hash-algorithm=sha256 name="profile $DNSaddress" nat-traversal=yes  proposal-check=obey 
-        /ip ipsec peer add exchange-mode=ike2 address=0.0.0.0/0 local-address="$IPaddress" name="peer $IPaddress" passive=yes send-initial-contact=yes profile="profile $DNSaddress" comment=$DNSaddress
-        /ip ipsec proposal add auth-algorithms=sha512,sha256,sha1 enc-algorithms=aes-256-cbc,aes-256-ctr,aes-256-gcm,aes-192-ctr,aes-192-gcm,aes-128-cbc,aes-128-ctr,aes-128-gcm lifetime=8h name="proposal $DNSaddress" pfs-group=none
-        /ip ipsec policy group add name="group $DNSaddress"
+        /ip ipsec profile add dh-group=modp2048,modp1536,modp1024 enc-algorithm=aes-256,aes-192,aes-128 hash-algorithm=sha256 name="$DNSaddress" nat-traversal=yes  proposal-check=obey 
+        /ip ipsec peer add exchange-mode=ike2 address=0.0.0.0/0 local-address="$IPaddress" name="peer $IPaddress" passive=yes send-initial-contact=yes profile="$DNSaddress" comment=$DNSaddress
+        /ip ipsec proposal add auth-algorithms=sha512,sha256,sha1 enc-algorithms=aes-256-cbc,aes-256-ctr,aes-256-gcm,aes-192-ctr,aes-192-gcm,aes-128-cbc,aes-128-ctr,aes-128-gcm lifetime=8h name="$DNSaddress" pfs-group=none
+        /ip ipsec policy group add name="$DNSaddress"
         :local dst [ /ip address get value-name=network [ find where interface=LoopBack ] ]
-        /ip ipsec policy add dst-address=($dst . "/" . $mask) group="group $DNSaddress" proposal="proposal $DNSaddress" src-address=0.0.0.0/0 template=yes comment=$DNSaddress
+        /ip ipsec policy add dst-address=($dst . "/" . $mask) group="$DNSaddress" proposal="$DNSaddress" src-address=0.0.0.0/0 template=yes comment=$DNSaddress
 
     }
 
