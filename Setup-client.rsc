@@ -14,10 +14,8 @@
     :put "I found next ipsec peer. Enter his number for create client configuration."
     :local read do={:return}
     :set $foundpeer [$read]
-    :local peerconf [:toarray [ip ipsec peer find where exchange-mode=ike2]]
-    :local foundpeerconf [:pick $peerconf $foundpeer]
-    :local DNSaddress [/ip ipsec peer get value-name=comment number=[:pick $peerconf $foundpeer]]
-    :local IPaddress [/ip ipsec peer get value-name=local-address  number=[:pick $peerconf $foundpeer]]
+    :local DNSaddress [/ip ipsec peer get value-name=comment number=$foundpeer]
+    :local IPaddress [/ip ipsec peer get value-name=local-address  number=$foundpeer]
     :put $IPaddress
     :put $DNSaddress
     :put "Insert username"
