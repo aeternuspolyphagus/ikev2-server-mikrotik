@@ -1,8 +1,9 @@
-# jan/10/2023 14:19:13 by RouterOS 7.7rc4
+# jan/10/2023 15:44:31 by RouterOS 7.7rc4
 # software id = 7J1Y-V6AK
 #
 /system script
-add dont-require-permissions=no name=Setup-server owner=admin policy=\
+add comment="IKEv2 setup scripts" dont-require-permissions=no name=\
+    Setup-server owner=admin policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":\
     local DNSaddress\r\
     \n:local IPaddress\r\
@@ -133,8 +134,8 @@ add dont-require-permissions=no name=Setup-server owner=admin policy=\
     \n\r\
     \n            :put \"Generate IpSec configurations.\"\r\
     \n            /ip ipsec mode-config add address-pool=\"pool \$DNSaddress\"\
-    \_address-prefix-length=32 name=\" \$DNSaddress\" split-include=0.0.0.0/0 \
-    static-dns=\$IPBR system-dns=no\r\
+    \_address-prefix-length=32 name=\"\$DNSaddress\" split-include=0.0.0.0/0 s\
+    tatic-dns=\$IPBR system-dns=no\r\
     \n\r\
     \n        }\r\
     \n\r\
@@ -393,7 +394,148 @@ add dont-require-permissions=no name=Setup-server owner=admin policy=\
     \n        }\r\
     \n    }\r\
     \n}"
-add dont-require-permissions=no name=Setup-client owner=admin policy=\
+add comment="IKEv2 setup scripts" dont-require-permissions=no name=\
+    ikev2-setup owner=admin policy=\
+    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":\
+    local WhatYouWant\r\
+    \n\r\
+    \n:put \"What you want\?\"\r\
+    \n:put \"1: Create server\"\r\
+    \n:put \"2: Remove server\"\r\
+    \n:put \"3: Create client\"\r\
+    \n:put \"4: Remove client\"\r\
+    \n\r\
+    \n:local read do={:return}\r\
+    \n:set WhatYouWant [\$read]\r\
+    \n:put \$WhatYouWant\r\
+    \n\r\
+    \ndo {\r\
+    \n    :if (\$WhatYouWant = 1) do {\r\
+    \n\r\
+    \n        system script run Setup-server\r\
+    \n    \r\
+    \n    }\r\
+    \n    \r\
+    \n    :if (\$WhatYouWant = 2) do {\r\
+    \n\r\
+    \n        system script run Remove-server\r\
+    \n\r\
+    \n    }\r\
+    \n    \r\
+    \n    :if (\$WhatYouWant = 3) do {\r\
+    \n        \r\
+    \n        system script run Setup-client\r\
+    \n\r\
+    \n    }\r\
+    \n    \r\
+    \n    :if (\$WhatYouWant = 4) do {\r\
+    \n\r\
+    \n        system script run Remove-client\r\
+    \n        \r\
+    \n    }\r\
+    \n}"
+add comment="IKEv2 setup scripts" dont-require-permissions=no name=\
+    Remove-server owner=admin policy=\
+    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":\
+    local peerconf [/ip ipsec peer find where exchange-mode=ike2]\r\
+    \n:local IPaddress\r\
+    \n:local DNSaddress\r\
+    \n\r\
+    \n:if (\$peerconf = \"\") do {\r\
+    \n\r\
+    \n    :put \"I can't found any ipsec configuration. Before run this script\
+    \_you must run script Setup-server.\"\r\
+    \n\r\
+    \n} else {\r\
+    \n\r\
+    \n    :do {/ip ipsec peer print detail value-list}\r\
+    \n    /ip ipsec peer print where exchange-mode=ike2\r\
+    \n    :put \"I found next ipsec peer. Enter his number for remove configur\
+    ation.\"\r\
+    \n    :local read do={:return}\r\
+    \n    :set \$foundpeer [\$read]\r\
+    \n    :set \$DNSaddress [/ip ipsec peer get value-name=comment number=\$fo\
+    undpeer]\r\
+    \n    :set \$IPaddress [/ip ipsec peer get value-name=local-address  numbe\
+    r=\$foundpeer]\r\
+    \n    :put \$IPaddress\r\
+    \n    :put \$DNSaddress\r\
+    \n\r\
+    \n}\r\
+    \n\r\
+    \n:put \"Remove client-identity\"\r\
+    \n\r\
+    \n/ip ipsec identity remove [find where comment=\"\$DNSaddress\"]\r\
+    \n\r\
+    \n:put \"Remove IPSec peer\"\r\
+    \n\r\
+    \n/ip ipsec peer remove [find where comment=\"\$DNSaddress\"]\r\
+    \n\r\
+    \n:put \"Remove modeconf\"\r\
+    \n\r\
+    \n/ip ipsec mode-config remove [find where name=\"\$DNSaddress\"]\r\
+    \n\r\
+    \n:put \"Remove IPSec policy\"\r\
+    \n\r\
+    \n/ip ipsec policy remove [find where comment=\"\$DNSaddress\"]\r\
+    \n\r\
+    \n:put \"Remove IPSec profile\"\r\
+    \n\r\
+    \n/ip ipsec profile remove [find where name=\"\$DNSaddress\"]\r\
+    \n\r\
+    \n:put \"Remove proposal\"\r\
+    \n\r\
+    \n/ip ipsec proposal remove [find where name=\"\$DNSaddress\"]\r\
+    \n\r\
+    \n:put \"Remove group\"\r\
+    \n\r\
+    \n/ip ipsec policy group remove [find where name=\"\$DNSaddress\"]\r\
+    \n\r\
+    \n:put \"Remove bridge address\"\r\
+    \n\r\
+    \n/ip address remove [find where comment=\"\$DNSaddress\"]\r\
+    \n\r\
+    \n:put \"Remove LoopBack bridge\"\r\
+    \n\r\
+    \n/interface bridge remove [find where comment=\"\$DNSaddress\"]\r\
+    \n\r\
+    \n:put \"Remove IP-pool\"\r\
+    \n\r\
+    \n/ip pool remove [find where comment=\"\$DNSaddress\"]"
+add comment="IKEv2 setup scripts" dont-require-permissions=no name=\
+    Remove-client owner=admin policy=\
+    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":\
+    do {/ip ipsec peer print detail value-list}\r\
+    \n/ip ipsec peer print where exchange-mode=ike2\r\
+    \n:put \"I found next ipsec peer. Enter his number for remove client confi\
+    guration.\"\r\
+    \n:local read do={:return}\r\
+    \n:set \$foundpeer [\$read]\r\
+    \n:local peername [/ip ipsec peer get value-name=name number=\$foundpeer]\
+    \r\
+    \n:do {/ip ipsec identity print value-list}\r\
+    \n/ip ipsec identity print where peer=\$peername\r\
+    \n:put \"Choose client number.\"\r\
+    \n:local read do={:return}\r\
+    \n:local clientid [\$read]\r\
+    \n:put \"Do you want to remove the client or disable it\? Choose 1 for dis\
+    able or 2 for delete.\"\r\
+    \n:local read do={:return}\r\
+    \n:local answer [\$read]\r\
+    \n\r\
+    \n:if (\$answer = 1) do {\r\
+    \n\r\
+    \n    /ip ipsec identity disable numbers=\$clientid\r\
+    \n\r\
+    \n}\r\
+    \n\r\
+    \n:if (\$answer = 2) do {\r\
+    \n\r\
+    \n    /ip ipsec identity remove numbers=\$clientid\r\
+    \n    \r\
+    \n}"
+add comment="IKEv2 setup scripts" dont-require-permissions=no name=\
+    Setup-client owner=admin policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":\
     local newClient\r\
     \n:local Password\r\
@@ -452,146 +594,11 @@ add dont-require-permissions=no name=Setup-client owner=admin policy=\
     @\$DNSaddress\";}\r\
     \n\r\
     \n    /ip ipsec identity add auth-method=digital-signature certificate=\"\
-    \$DNSaddress\" remote-certificate=\"\$newClient@\$DNSaddress\" generate-po\
-    licy=port-strict match-by=certificate mode-config=\"\$DNSaddress\" peer=\"\
-    peer \$IPaddress\" policy-template-group=\"\$DNSaddress\" remote-id=\"user\
-    -fqdn:\$newClient@\$DNSaddress\" comment=\$DNSaddress\r\
+    \$DNSaddress\" remote-certificate=(\"\$newClient\" . \"@\" .\"\$DNSaddress\
+    \") generate-policy=port-strict match-by=certificate mode-config=\"\$DNSad\
+    dress\" peer=\"peer \$IPaddress\" policy-template-group=\"\$DNSaddress\" r\
+    emote-id=\"user-fqdn:\$newClient@\$DNSaddress\" comment=\$DNSaddress\r\
     \n\r\
     \n    :put \" ============== Script finished ============== \"\r\
     \n\r\
-    \n}"
-add dont-require-permissions=no name=Remove-server owner=admin policy=\
-    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":\
-    local peerconf [/ip ipsec peer find where exchange-mode=ike2]\r\
-    \n\r\
-    \n:if (\$peerconf = \"\") do {\r\
-    \n\r\
-    \n    :put \"I can't found any ipsec configuration. Before run this script\
-    \_you must run script Setup-server.\"\r\
-    \n\r\
-    \n} else {\r\
-    \n\r\
-    \n    :do {/ip ipsec peer print detail value-list}\r\
-    \n    /ip ipsec peer print where exchange-mode=ike2\r\
-    \n    :put \"I found next ipsec peer. Enter his number for remove configur\
-    ation.\"\r\
-    \n    :local read do={:return}\r\
-    \n    :set \$foundpeer [\$read]\r\
-    \n    :local DNSaddress [/ip ipsec peer get value-name=comment number=\$fo\
-    undpeer]\r\
-    \n    :local IPaddress [/ip ipsec peer get value-name=local-address  numbe\
-    r=\$foundpeer]\r\
-    \n    :put \$IPaddress\r\
-    \n    :put \$DNSaddress\r\
-    \n\r\
-    \n}\r\
-    \n\r\
-    \n:put \"Remove client-identity\"\r\
-    \n\r\
-    \n/ip ipsec identity remove [find where comment=\$DNSaddress]\r\
-    \n\r\
-    \n:put \"Remove IPSec peer\"\r\
-    \n\r\
-    \n/ip ipsec peer remove [find where comment=\$DNSaddress]\r\
-    \n\r\
-    \n:put \"Remove modeconf\"\r\
-    \n\r\
-    \n/ip ipsec mode-config remove [find where name=\$DNSaddress]\r\
-    \n\r\
-    \n:put \"Remove IPSec policy\"\r\
-    \n\r\
-    \n/ip ipsec policy remove [find where comment=\$DNSaddress]\r\
-    \n\r\
-    \n:put \"Remove IPSec profile\"\r\
-    \n\r\
-    \n/ip ipsec profile remove [find where name=\$DNSaddress]\r\
-    \n\r\
-    \n:put \"Remove proposal\"\r\
-    \n\r\
-    \n/ip ipsec proposal remove [find where name=\$DNSaddress]\r\
-    \n\r\
-    \n:put \"Remove group\"\r\
-    \n\r\
-    \n/ip ipsec group remove [find where name=\$DNSaddress]\r\
-    \n\r\
-    \n:put \"Remove bridge address\"\r\
-    \n\r\
-    \n/ip address remove [find where comment=\$DNSaddress]\r\
-    \n\r\
-    \n:put \"Remove LoopBack bridge\"\r\
-    \n\r\
-    \n/interface bridge remove [find where comment=\$DNSaddress]\r\
-    \n\r\
-    \n:put \"Remove IP-pool\"\r\
-    \n\r\
-    \n/ip pool remove [find where comment=\$DNSaddress]"
-add dont-require-permissions=no name=Remove-client owner=admin policy=\
-    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":\
-    do {/ip ipsec peer print detail value-list}\r\
-    \n/ip ipsec peer print where exchange-mode=ike2\r\
-    \n:put \"I found next ipsec peer. Enter his number for remove client confi\
-    guration.\"\r\
-    \n:local read do={:return}\r\
-    \n:set \$foundpeer [\$read]\r\
-    \n:local peername [/ip ipsec peer get value-name=name number=\$foundpeer]\
-    \r\
-    \n:do {/ip ipsec identity print value-list}\r\
-    \n/ip ipsec identity print where peer=\$peername\r\
-    \n:put \"Choose client number.\"\r\
-    \n:local read do={:return}\r\
-    \n:local clientid [\$read]\r\
-    \n:put \"Do you want to remove the client or disable it\? Choose 1 for dis\
-    able or 2 for delete.\"\r\
-    \n:local read do={:return}\r\
-    \n:local answer [\$read]\r\
-    \n\r\
-    \n:if (\$answer = 1) do {\r\
-    \n\r\
-    \n    /ip ipsec identity disable numders=\$clientid\r\
-    \n\r\
-    \n}\r\
-    \n\r\
-    \n:if (\$answer = 2) do {\r\
-    \n\r\
-    \n    /ip ipsec identity remove numbers=\$clientid\r\
-    \n    \r\
-    \n}"
-add dont-require-permissions=no name=ikev2-setup owner=admin policy=\
-    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":\
-    local WhatYouWant\r\
-    \n\r\
-    \n:put \"What you want\?\"\r\
-    \n:put \"1: Create server\"\r\
-    \n:put \"2: Remove server\"\r\
-    \n:put \"3: Create client\"\r\
-    \n:put \"4: Remove client\"\r\
-    \n\r\
-    \n:local read do={:return}\r\
-    \n:set WhatYouWant [\$read]\r\
-    \n:put \$WhatYouWant\r\
-    \n\r\
-    \ndo {\r\
-    \n    :if (\$WhatYouWant = 1) do {\r\
-    \n\r\
-    \n        system script run Setup-server\r\
-    \n    \r\
-    \n    }\r\
-    \n    \r\
-    \n    :if (\$WhatYouWant = 2) do {\r\
-    \n\r\
-    \n        system script run Remove-server\r\
-    \n\r\
-    \n    }\r\
-    \n    \r\
-    \n    :if (\$WhatYouWant = 3) do {\r\
-    \n        \r\
-    \n        system script run Setup-client\r\
-    \n\r\
-    \n    }\r\
-    \n    \r\
-    \n    :if (\$WhatYouWant = 4) do {\r\
-    \n\r\
-    \n        system script run Remove-client\r\
-    \n        \r\
-    \n    }\r\
     \n}"

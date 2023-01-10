@@ -106,7 +106,7 @@
         } else {
 
             :put "Generate IpSec configurations."
-            /ip ipsec mode-config add address-pool="pool $DNSaddress" address-prefix-length=32 name=" $DNSaddress" split-include=0.0.0.0/0 static-dns=$IPBR system-dns=no
+            /ip ipsec mode-config add address-pool="pool $DNSaddress" address-prefix-length=32 name="$DNSaddress" split-include=0.0.0.0/0 static-dns=$IPBR system-dns=no
 
         }
 

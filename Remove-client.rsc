@@ -15,7 +15,7 @@
 
 :if ($answer = 1) do {
 
-    /ip ipsec identity disable numders=$clientid
+    /ip ipsec identity disable numbers=$clientid
 
 }
 
