@@ -1,3 +1,6 @@
+# jan/10/2023 14:19:13 by RouterOS 7.7rc4
+# software id = 7J1Y-V6AK
+#
 /system script
 add dont-require-permissions=no name=Setup-server owner=admin policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":\
@@ -263,7 +266,7 @@ add dont-require-permissions=no name=Setup-server owner=admin policy=\
     ress=(\$dst . \"/24\") chain=input] = \"\") do {\r\
     \n        \r\
     \n            /ip firewall filter add action=accept chain=input ipsec-poli\
-    cy=in,ipsec src-address=10.0.88.0/24 \r\
+    cy=in,ipsec src-address=(\$dst . \"/24\") \r\
     \n            :put \"Firewall filter rule for allow access from IKE2 clien\
     ts to router created.\"\r\
     \n        \r\
@@ -412,8 +415,8 @@ add dont-require-permissions=no name=Setup-client owner=admin policy=\
     \n    :set \$foundpeer [\$read]\r\
     \n    :local DNSaddress [/ip ipsec peer get value-name=comment number=\$fo\
     undpeer]\r\
-    \n    :local IPaddress [/ip ipsec peer get value-name=local-address  numbe\
-    r=\$foundpeer]\r\
+    \n    :local IPaddress [/ip ipsec peer get value-name=local-address number\
+    =\$foundpeer]\r\
     \n    :put \$IPaddress\r\
     \n    :put \$DNSaddress\r\
     \n    :put \"Insert username\"\r\
@@ -450,9 +453,9 @@ add dont-require-permissions=no name=Setup-client owner=admin policy=\
     \n\r\
     \n    /ip ipsec identity add auth-method=digital-signature certificate=\"\
     \$DNSaddress\" remote-certificate=\"\$newClient@\$DNSaddress\" generate-po\
-    licy=port-strict match-by=certificate mode-config=\"modeconf \$DNSaddress\
-    \" peer=\"peer \$IPaddress\" policy-template-group=\"group \$DNSaddress\" \
-    remote-id=\"user-fqdn:\$newClient@\$DNSaddress\" comment=\$DNSaddress\r\
+    licy=port-strict match-by=certificate mode-config=\"\$DNSaddress\" peer=\"\
+    peer \$IPaddress\" policy-template-group=\"\$DNSaddress\" remote-id=\"user\
+    -fqdn:\$newClient@\$DNSaddress\" comment=\$DNSaddress\r\
     \n\r\
     \n    :put \" ============== Script finished ============== \"\r\
     \n\r\
@@ -493,7 +496,7 @@ add dont-require-permissions=no name=Remove-server owner=admin policy=\
     \n\r\
     \n:put \"Remove modeconf\"\r\
     \n\r\
-    \n/ip ipsec modeconf remove [find where name=\$DNSaddress]\r\
+    \n/ip ipsec mode-config remove [find where name=\$DNSaddress]\r\
     \n\r\
     \n:put \"Remove IPSec policy\"\r\
     \n\r\

@@ -200,7 +200,7 @@
         
         :if ([/ip firewall filter find ipsec-policy="in,ipsec" src-address=($dst . "/24") chain=input] = "") do {
         
-            /ip firewall filter add action=accept chain=input ipsec-policy=in,ipsec src-address=10.0.88.0/24 
+            /ip firewall filter add action=accept chain=input ipsec-policy=in,ipsec src-address=($dst . "/24") 
             :put "Firewall filter rule for allow access from IKE2 clients to router created."
         
         } else {

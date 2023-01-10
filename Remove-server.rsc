@@ -28,7 +28,7 @@
 
 :put "Remove modeconf"
 
-/ip ipsec modeconf remove [find where name=$DNSaddress]
+/ip ipsec mode-config remove [find where name=$DNSaddress]
 
 :put "Remove IPSec policy"
 

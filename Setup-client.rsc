@@ -15,7 +15,7 @@
     :local read do={:return}
     :set $foundpeer [$read]
     :local DNSaddress [/ip ipsec peer get value-name=comment number=$foundpeer]
-    :local IPaddress [/ip ipsec peer get value-name=local-address  number=$foundpeer]
+    :local IPaddress [/ip ipsec peer get value-name=local-address number=$foundpeer]
     :put $IPaddress
     :put $DNSaddress
     :put "Insert username"
@@ -42,7 +42,7 @@
 
     }  on-error={:put "!!! cannot create client certificate $newClient@$DNSaddress";}
 
-    /ip ipsec identity add auth-method=digital-signature certificate="$DNSaddress" remote-certificate="$newClient@$DNSaddress" generate-policy=port-strict match-by=certificate mode-config="modeconf $DNSaddress" peer="peer $IPaddress" policy-template-group="group $DNSaddress" remote-id="user-fqdn:$newClient@$DNSaddress" comment=$DNSaddress
+    /ip ipsec identity add auth-method=digital-signature certificate="$DNSaddress" remote-certificate="$newClient@$DNSaddress" generate-policy=port-strict match-by=certificate mode-config="$DNSaddress" peer="peer $IPaddress" policy-template-group="$DNSaddress" remote-id="user-fqdn:$newClient@$DNSaddress" comment=$DNSaddress
 
     :put " ============== Script finished ============== "
 
