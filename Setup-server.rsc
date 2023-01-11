@@ -88,10 +88,17 @@
         :local read do={:return}
         :set $IPBR [$read]
         /ip address add address=([$IPBR]. "/24") interface=LoopBack comment=$DNSaddress
-        :put "Enter ip-pool for Ipsec-client. Like x.x.x.100-x.x.x.200."
-        :local pool
+        :local dstlen [len [ /ip address get value-name=network [ find where interface=LoopBack ] ]]
+        :local dirtypool [:pick [ /ip address get value-name=network [ find where interface=LoopBack ] ] 0 ($dstlen -1) ] 
+        :put "Enter start fourth octet for ip-pool for Ipsec-client. Like 10/100/200 and etc"
+        :local poolstart
         :local read do=[:return]
-        :set pool [$read]
+        :set poolstart [$read]
+        :put "Enter count of ips for pool."
+        :local poolcount
+        :local read do=[:return]
+        :set poolcount [$read]
+        :local pool ["$dirtypool" . "$poolstart" . "-" . "$dirtypool" . ($poolstart + $poolcount)]
         /ip pool add name="pool $DNSaddress" ranges=$pool comment=$DNSaddress
         :put "You want route for specified network or any? Enter specified networks like x.x.x.x/x,y.y.y.y/y or press 0."
         :local split

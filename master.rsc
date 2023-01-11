@@ -110,13 +110,18 @@ add comment="IKEv2 setup scripts" dont-require-permissions=no name=\
     \n        :set \$IPBR [\$read]\r\
     \n        /ip address add address=([\$IPBR]. \"/24\") interface=LoopBack c\
     omment=\$DNSaddress\r\
-    \n        :put \"Enter ip-pool for Ipsec-client. Like x.x.x.100-x.x.x.200.\
-    \"\r\
-    \n        :local pool\r\
+    \n        :local dstlen [len [ /ip address get value-name=network [ find where interface=LoopBack ] ]]\r\
+    \n        :local dirtypool [:pick [ /ip address get value-name=network [ find where interface=LoopBack ] ] 0 (\$dstlen -1) ] \r\
+    \n        :put \"Enter start fourth octet for ip-pool for Ipsec-client. Like 10/100/200 and etc\"\r\
+    \n        :local poolstart\r\
     \n        :local read do=[:return]\r\
-    \n        :set pool [\$read]\r\
-    \n        /ip pool add name=\"pool \$DNSaddress\" ranges=\$pool comment=\$\
-    DNSaddress\r\
+    \n        :set poolstart [\$read]\r\
+    \n        :put \"Enter count of ips for pool.\"\r\
+    \n        :local poolcount\r\
+    \n        :local read do=[:return]\r\
+    \n        :set poolcount [\$read]\r\
+    \n        :local pool [\"\$dirtypool\" . \"\$poolstart\" . \"-\" . \"\$dirtypool\" . (\$poolstart + \$poolcount)]\r\
+    \n        /ip pool add name=\"pool \$DNSaddress\" ranges=\$pool comment=\$DNSaddress\r\
     \n        :put \"You want route for specified network or any\? Enter speci\
     fied networks like x.x.x.x/x,y.y.y.y/y or press 0.\"\r\
     \n        :local split\r\
