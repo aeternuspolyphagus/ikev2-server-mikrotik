@@ -120,7 +120,7 @@ add comment="IKEv2 setup scripts" dont-require-permissions=no name=\
     \n        :local poolcount\r\
     \n        :local read do=[:return]\r\
     \n        :set poolcount [\$read]\r\
-    \n        :local pool [\"\$dirtypool\" . \"\$poolstart\" . \"-\" . \"\$dirtypool\" . (\$poolstart + \$poolcount)]\r\
+    \n        :local pool [\$dirtypool . \$poolstart . \"-\" . \$dirtypool . (\$poolstart + \$poolcount)]\r\
     \n        /ip pool add name=\"pool \$DNSaddress\" ranges=\$pool comment=\$DNSaddress\r\
     \n        :put \"You want route for specified network or any\? Enter speci\
     fied networks like x.x.x.x/x,y.y.y.y/y or press 0.\"\r\

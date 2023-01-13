@@ -98,7 +98,7 @@
         :local poolcount
         :local read do=[:return]
         :set poolcount [$read]
-        :local pool ["$dirtypool" . "$poolstart" . "-" . "$dirtypool" . ($poolstart + $poolcount)]
+        :local pool [$dirtypool . $poolstart . "-" . $dirtypool . ($poolstart + $poolcount)]
         /ip pool add name="pool $DNSaddress" ranges=$pool comment=$DNSaddress
         :put "You want route for specified network or any? Enter specified networks like x.x.x.x/x,y.y.y.y/y or press 0."
         :local split
